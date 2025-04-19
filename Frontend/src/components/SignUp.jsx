@@ -14,7 +14,6 @@ const SignUp = () => {
     firstName: "",
     lastName: "",
     phoneNumber: "",
-    location: "",
     address: "",
     email: "",
     password: "",
@@ -59,7 +58,7 @@ const SignUp = () => {
   };
 
   return (
-    <div className="flex justify-center items-center min-h-screen bg-gradient-to-r from-blue-500 to-purple-600 p-6">
+    <div className="flex justify-center items-center min-h-screen bg-gray-900 shadow-amber-900 p-6">
       <ToastContainer />
 
       <div className="bg-white shadow-xl rounded-2xl p-10 flex flex-col sm:flex-row items-center max-w-5xl w-[80%]">
@@ -121,7 +120,7 @@ const SignUp = () => {
                       required
                     />
                   </div>
-                  <div>
+                  {/* <div>
                     <label className="block text-gray-700 font-semibold mb-1">Location</label>
                     <input
                       type="text"
@@ -131,7 +130,7 @@ const SignUp = () => {
                       className="w-full border border-gray-300 p-3 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none"
                       required
                     />
-                  </div>
+                  </div> */}
                 </div>
 
                 {/* Address */}

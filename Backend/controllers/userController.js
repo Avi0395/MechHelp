@@ -2,7 +2,7 @@ const User = require("../models/User");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 
-const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret"; 
+const JWT_SECRET = process.env.JWT_SECRET || "your_jwt_secret";
 
 // Register User
 exports.registerUser = async (req, res) => {
@@ -69,12 +69,7 @@ exports.loginUser = async (req, res) => {
 
 
 
-exports.Logout =(req,res)=>{
-    return res.cookie("token","",{expiresIn:new Date(Date.now())}).json({
-        message: "Logged out successfully",
-        success:true
-    })
-}
+
 
 // Get User Profile
 exports.getUserProfile = async (req, res) => {
@@ -135,4 +130,11 @@ exports.deleteUser = async (req, res) => {
         console.error("Error in deleteUser:", error);
         res.status(500).json({ error: error.message });
     }
+};
+
+exports.logout = (req, res) => {
+    return res.cookie("token", "", { expiresIn: new Date(Date.now()) }).json({
+        message: "Logged out successfully",
+        success: true
+    })
 };

@@ -6,12 +6,7 @@ const User = require("../models/User");
 // Create a new request
 exports.createRequest = async (req, res) => {
     try {
-        const allowedMessages = ["puncture", "engine", "battery", "brake", "other"];
         const { userId, mechanicId, userLocation, mechanicLocation, message } = req.body;
-
-        if (!allowedMessages.includes(message)) {
-            return res.status(400).json({ message: "Invalid problem type selected." });
-        }
 
         const newRequest = new Request({
             userId,
@@ -46,7 +41,7 @@ exports.getRequestsByUser = async (req, res) => {
 exports.getRequestsByMechanic = async (req, res) => {
     try {
         const { mechanicId } = req.params;
-        const requests = await Request.find({ mechanicId }).populate("userId");
+        const requests = await Request.find({ mechanicId });//.populate("userId");
         res.status(200).json(requests);
     } catch (error) {
         res.status(500).json({ message: "Error fetching mechanic requests", error: error.message });

@@ -41,7 +41,7 @@ const RequestSchema = new mongoose.Schema(
     },
     message: {
       type: String,
-      enum: ["puncture", "engine", "battery", "brake", "other"],
+      enum: ["Puncture", "Fuel Problem", "Engine Issue", "Brake Failure","Battery Issue", "Other"],
       required: true,
     },    
     distanceInKm: {

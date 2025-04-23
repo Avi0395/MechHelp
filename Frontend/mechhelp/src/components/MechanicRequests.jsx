@@ -1,65 +1,128 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 
-const MechanicRequests = ({ mechanicId }) => {
-  const [requests, setRequests] = useState([]);
+function MechanicRequests({ mechanicId = "61c72b2f9f1b2c001c8b8901" }) {
+    const [requests, setRequests] = useState([]);
+    const [error, setError] = useState(null);
 
-  useEffect(() => {
-    axios
-      .get(`/api/requests/mechanic/${mechanicId}`)
-      .then((res) => setRequests(res.data))
-      .catch((err) => console.error("Error fetching mechanic requests:", err));
-  }, [mechanicId]);
+    const fetchRequests = async () => {
+        try {
+            const response = await axios.get(`http://localhost:5000/api/requests/mechanic/${mechanicId}`);
+            if (Array.isArray(response.data)) {
+                setRequests(response.data);
+            } else {
+                setError("Unexpected response format");
+            }
+        } catch (err) {
+            if (err.response) {
+                setError(`Error: ${err.response.data.message}`);
+            } else {
+                setError(err.message);
+            }
+        }
+    };
 
-  const updateStatus = async (id, status) => {
-    try {
-      await axios.patch(`/api/requests/${id}/status`, { status });
-      setRequests((prev) =>
-        prev.map((r) => (r._id === id ? { ...r, status } : r))
-      );
-    } catch (error) {
-      console.error("Status update failed", error);
-    }
-  };
+    useEffect(() => {
+        if (mechanicId) fetchRequests();
+    }, [mechanicId]);
 
-  return (
-    <div className="p-4 grid gap-4">
-      <h2 className="text-xl font-semibold mb-2">Incoming Requests</h2>
-      {requests.map((req) => (
-        <div key={req._id} className="p-4 bg-white shadow-md rounded-lg">
-          <p><strong>User:</strong> {req.userId?.firstName} {req.userId?.lastName}</p>
-          <p><strong>Problem:</strong> {req.message}</p>
-          <p><strong>Status:</strong> <span className="font-medium text-blue-600">{req.status}</span></p>
-          <div className="mt-2 flex gap-2">
-            {req.status === "pending" && (
-              <>
-                <button
-                  onClick={() => updateStatus(req._id, "accepted")}
-                  className="px-3 py-1 bg-green-500 text-white rounded"
-                >
-                  Accept
-                </button>
-                <button
-                  onClick={() => updateStatus(req._id, "rejected")}
-                  className="px-3 py-1 bg-red-500 text-white rounded"
-                >
-                  Reject
-                </button>
-              </>
+    const formatLocation = (location) => {
+        if (
+            location &&
+            typeof location === "object" &&
+            Array.isArray(location.coordinates) &&
+            location.coordinates.length === 2
+        ) {
+            return `Lat: ${location.coordinates[1]}, Lng: ${location.coordinates[0]}`;
+        }
+        return "Location not available";
+    };
+
+    const getStatusColor = (status) => {
+        switch (status) {
+            case "pending":
+                return "text-yellow-600 bg-yellow-100";
+            case "accepted":
+                return "text-blue-600 bg-blue-100";
+            case "completed":
+                return "text-green-600 bg-green-100";
+            case "rejected":
+                return "text-red-600 bg-red-100";
+            default:
+                return "text-gray-600 bg-gray-100";
+        }
+    };
+
+    const handleStatusChange = async (id, status) => {
+        try {
+            await axios.put(`http://localhost:5000/api/requests/status/${id}`, { status });
+            fetchRequests(); // refresh list
+        } catch (error) {
+            console.error("Error updating status:", error);
+        }
+    };
+
+    return (
+        <div className="max-w-4xl mx-auto p-4">
+            <h2 className="text-2xl font-bold mb-6 text-center">Service Requests</h2>
+            {error && <p className="text-red-600 text-center">{error}</p>}
+            {requests.length > 0 ? (
+                <div className="space-y-4">
+                    {requests.map((request) => (
+                        <div
+                            key={request._id}
+                            className="bg-white shadow-md rounded-xl p-4 border border-gray-200 hover:shadow-lg transition-shadow duration-300"
+                        >
+                            <div className="flex justify-between items-center mb-2">
+                                <span className="font-semibold text-lg">
+                                    User: {request.userId?.name || "Unknown"}
+                                </span>
+                                <span
+                                    className={`text-sm px-3 py-1 rounded-full font-medium ${getStatusColor(
+                                        request.status
+                                    )}`}
+                                >
+                                    {request.status}
+                                </span>
+                            </div>
+                            <div className="text-gray-700 text-sm mb-2">
+                                <p>
+                                    <span className="font-semibold">Problem:</span> {request.message}
+                                </p>
+                                <p>
+                                    <span className="font-semibold">Location:</span>{" "}
+                                    {formatLocation(request.userLocation)}
+                                </p>
+                                <p>
+                                    <span className="font-semibold">User Phone:</span>{" "}
+                                    {request.userId?.phone || "Not available"}
+                                </p>
+                            </div>
+
+                            {request.status === "pending" && (
+                                <div className="flex gap-2">
+                                    <button
+                                        onClick={() => handleStatusChange(request._id, "accepted")}
+                                        className="bg-green-600 text-white px-4 py-1 rounded-md hover:bg-green-700"
+                                    >
+                                        Accept
+                                    </button>
+                                    <button
+                                        onClick={() => handleStatusChange(request._id, "rejected")}
+                                        className="bg-red-600 text-white px-4 py-1 rounded-md hover:bg-red-700"
+                                    >
+                                        Reject
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <p className="text-center text-gray-500">No service requests assigned to you yet.</p>
             )}
-            {req.status === "accepted" && (
-              <button
-                onClick={() => updateStatus(req._id, "completed")}
-                className="px-3 py-1 bg-blue-500 text-white rounded"
-              >
-                Mark as Completed
-              </button>
-            )}
-          </div>
         </div>
-      ))}
-    </div>
-  );
-};
+    );
+}
 
 export default MechanicRequests;

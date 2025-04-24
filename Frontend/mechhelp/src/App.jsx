@@ -4,7 +4,10 @@ import Layout from "./components/Layout";
 import Services from "./Pages/Services";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import SignUp from "./components/Signup";
-import MechanicDashboard from "./components/MechanicDashboard"; // Import the new component
+import MechanicDashboard from "./components/MechanicDashboard";
+import MechDashboard from "./Pages/MechDashboard";
+import MechLayout from "./components/MechLayout";
+import MechanicRequests from "./components/MechanicRequests";
 
 function App() {
   const router = createBrowserRouter([
@@ -23,14 +26,28 @@ function App() {
         {
           path: "services",
           element: <Services />,
-        }
+        },
       ],
     },
-    // Add the new route for mechanic dashboard
     {
-      path: "/mechanic-dashboard",
-      element: <MechanicDashboard />,
-    }
+      path: "/mechdashboard",
+      element: <MechLayout />,
+      children: [
+        {
+          index: true,
+          element: <MechDashboard />,
+        },
+        {
+          path: "profile",
+          element: <MechanicDashboard />,
+        },
+        {
+          // 👇 This is now dynamic!
+          path: "requests", // <- exact and dynamic!
+          element: <MechanicRequests />,
+        },
+      ],
+    },
   ]);
 
   return <RouterProvider router={router} />;

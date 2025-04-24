@@ -29,6 +29,11 @@ const MechanicSchema = new mongoose.Schema(
       required: true,
       trim: true,
     },
+    profilePic: {
+      type: String,
+      default: "", 
+    },
+
     location: {
       type: {
         type: String,

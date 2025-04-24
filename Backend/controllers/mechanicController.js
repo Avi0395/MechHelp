@@ -2,7 +2,7 @@ const Mechanic = require("../models/Mechanic");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const geocoder = require("../utils/geocoder");
-
+const JWT_SECRET = process.env.JWT_SECRET;
 const generateToken = (id) => {
   return jwt.sign({ id, role: "mechanic" }, process.env.JWT_SECRET, {
     expiresIn: "7d",
@@ -28,14 +28,17 @@ exports.registerMechanic = async (req, res) => {
     } = req.body;
 
     const existing = await Mechanic.findOne({ email });
-    if (existing) return res.status(400).json({ message: "Mechanic already exists" });
+    if (existing)
+      return res.status(400).json({ message: "Mechanic already exists" });
 
     let finalCoordinates = coordinates;
 
     if (!coordinates || !coordinates.length) {
       const geoData = await geocoder.geocode(address);
       if (!geoData.length) {
-        return res.status(400).json({ message: "Invalid address. Unable to geocode." });
+        return res
+          .status(400)
+          .json({ message: "Invalid address. Unable to geocode." });
       }
       finalCoordinates = [geoData[0].longitude, geoData[0].latitude];
     }
@@ -79,31 +82,45 @@ exports.loginMechanic = async (req, res) => {
   try {
     const { email, password } = req.body;
 
+    // Find mechanic by email
     const mechanic = await Mechanic.findOne({ email });
-    if (!mechanic) return res.status(404).json({ message: "Mechanic not found" });
+    if (!mechanic) {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
 
+    // Compare passwords
     const isMatch = await bcrypt.compare(password, mechanic.password);
-    if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
+    if (!isMatch) {
+      return res.status(400).json({ message: "Invalid email or password" });
+    }
 
-    const token = generateToken(mechanic._id);
+    // Generate JWT token
+    const token = jwt.sign({ id: mechanic._id }, JWT_SECRET, {
+      expiresIn: "7d", // You can adjust this if necessary
+    });
 
+    res.cookie("MechanicToken",token,{
+      httpOnly: true,
+      maxage: 7 * 24 * 60 * 60 * 1000, // 7 days in milliseconds
+    })
+
+    // Send response with token and mechanic details (without password)
     res.status(200).json({
       message: "Login successful",
+      mechanic: { ...mechanic.toObject(), password: undefined }, // Exclude password
       token,
-      mechanic: { ...mechanic.toObject(), password: undefined },
     });
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: error.message });
+    console.error("Error in loginMechanic:", error);
+    res.status(500).json({ error: error.message });
   }
 };
 
-exports.logoutMechanic = async (req, res) => {
-  try {
-    res.status(200).json({ message: "Mechanic logged out successfully" });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
+exports.logoutMechanic =(req, res) => {
+  return res.cookie("MechanicToken", "", { expires: new Date(0) }).json({
+    message: "Logged out successfully",
+    success: true,
+  });
 };
 
 exports.getNearbyAvailableMechanics = async (req, res) => {
@@ -117,7 +134,10 @@ exports.getNearbyAvailableMechanics = async (req, res) => {
     const mechanics = await Mechanic.find({
       location: {
         $near: {
-          $geometry: { type: "Point", coordinates: [parseFloat(longitude), parseFloat(latitude)] },
+          $geometry: {
+            type: "Point",
+            coordinates: [parseFloat(longitude), parseFloat(latitude)],
+          },
           $maxDistance: parseFloat(radius),
         },
       },
@@ -186,5 +206,50 @@ exports.getAllMechanics = async (req, res) => {
     res.status(200).json(mechanics);
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+exports.getLoggedInMechanic = async (req, res) => {
+  try {
+    const mechanic = await Mechanic.findById(req.mechanicId).select(
+      "-password"
+    );
+    if (!mechanic)
+      return res.status(404).json({ message: "Mechanic not found" });
+    res.status(200).json(mechanic);
+  } catch (error) {
+    console.error("Error fetching mechanic:", error);
+    res.status(500).json({ message: "Server Error", error });
+  }
+};
+
+exports.updateMechanicProfile = async (req, res) => {
+  try {
+    const mechanic = await Mechanic.findById(req.params.id);
+    if (!mechanic) {
+      return res.status(404).json({ message: "Mechanic not found" });
+    }
+
+    // Update fields
+    mechanic.name = req.body.name || mechanic.name;
+    mechanic.email = req.body.email || mechanic.email;
+    mechanic.phone = req.body.phone || mechanic.phone;
+    mechanic.address = req.body.address || mechanic.address;
+
+    // Update profile picture if uploaded
+    if (req.file) {
+      mechanic.profilePic = req.file.filename; // Save only the filename
+    }
+
+    await mechanic.save();
+
+    // Respond with updated data - don't construct full URL here
+    res.status(200).json({
+      ...mechanic._doc,
+      profilePic: mechanic.profilePic, // Send just the filename
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error updating mechanic profile" });
   }
 };

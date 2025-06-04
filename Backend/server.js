@@ -5,6 +5,7 @@ const connectDB = require("./config/db");
 const userRoutes = require("./routes/userRoutes.js");
 const mechanicRoutes = require("./routes/mechanicRoutes.js");
 const RequestRoutes = require("./routes/RequestRoutes.js")
+const FeedbackRoutes = require("./routes/FeedbackRoutes.js");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 
@@ -28,6 +29,8 @@ app.use(cookieParser());
 app.use("/api/users", userRoutes);
 app.use("/api/mechanics", mechanicRoutes);
 app.use("/api/requests", RequestRoutes);
+app.use("/api/feedback", FeedbackRoutes);
+
 
 
 const PORT = process.env.PORT || 5000;

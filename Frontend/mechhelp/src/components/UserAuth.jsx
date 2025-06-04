@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom"; //  Import this
 import axios from "axios";
+import { useNavigate } from "react-router-dom"; //  Import this
 import toast, { Toaster } from "react-hot-toast";
 
 const API_ENDPOINT = import.meta.env.VITE_USER_API_END_POINT;
@@ -14,7 +14,7 @@ const UserAuth = () => {
     phoneNumber: ""
   });
 
-  const navigate = useNavigate(); //  Create navigate instance
+  const navigate = useNavigate(); 
 
   const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });

@@ -7,7 +7,7 @@ import { useParams } from "react-router-dom"; // Import useParams
 const API_ENDPOINT = import.meta.env.VITE_USER_API_END_POINT;
 
 const ProfilePage = () => {
-    const { id: userId } = useParams(); // Extract the userId from the route parameters
+    // const { id: userId } = useParams(); // Extract the userId from the route parameters
     const [isEditing, setIsEditing] = useState(false);
     const [user, setUser] = useState({
         name: "",
@@ -18,7 +18,7 @@ const ProfilePage = () => {
 
     const fetchUserProfile = async () => {
         try {
-            const response = await axios.get(`${API_ENDPOINT}/profile/${userId}`, {
+            const response = await axios.get(`${API_ENDPOINT}/profile`, {
                 withCredentials: true
             });
             console.log("Fetched profile:", response.data);
@@ -47,7 +47,7 @@ const ProfilePage = () => {
 
     const handleSave = async () => {
         try {
-            const response = await axios.put(`${API_ENDPOINT}/profile/${userId}`, {
+            const response = await axios.put(`${API_ENDPOINT}/updateprofile}`, {
                 name: user.name,
                 email: user.email,
                 phoneNumber: user.phoneNumber,

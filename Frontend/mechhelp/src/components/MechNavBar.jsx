@@ -55,7 +55,6 @@ const MechNavBar = () => {
           <NavLink
             to="/MechDashboard/requests"
 
-
             className={({ isActive }) =>
               `font-semibold hover:text-gray-400 ${isActive ? "text-blue-300" : "text-white"}`
             }
@@ -112,7 +111,7 @@ const MechNavBar = () => {
             Customer Requests
           </NavLink>
           <NavLink
-            to="/displayreq"
+            to="/MechDashboard/history"
             onClick={toggleMenu}
             className="block font-semibold hover:text-gray-400"
           >

@@ -101,36 +101,30 @@ const Nav = () => {
           >
             Home
           </NavLink>
+          
           <NavLink
-            to="layout/services"
-            onClick={toggleMenu}
-            className="block font-semibold hover:text-gray-400"
-          >
-            Services
-          </NavLink>
-          <NavLink
-            to="layout/nearby-mechanic"
+            to="/layout/nearby-mechanic"
             onClick={toggleMenu}
             className="block font-semibold hover:text-gray-400"
           >
             Nearby Mechanics
           </NavLink>
           <NavLink
-            to="layout/profile"
+            to="/layout/profile"
             onClick={toggleMenu}
             className="block font-semibold hover:text-gray-400"
           >
             Profile
           </NavLink>
           <NavLink
-            to="layout/track"
+            to="/layout/track"
             onClick={toggleMenu}
             className="block font-semibold hover:text-gray-400"
           >
             Track
           </NavLink>
           <NavLink
-            to="layout/history"
+            to="/layout/history"
             onClick={toggleMenu}
             className="block font-semibold hover:text-gray-400"
           >

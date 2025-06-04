@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import axios from "axios";
@@ -120,7 +119,7 @@ const MechanicProfile = () => {
     }
   };
 
-
+  
   const handleAvailabilityChange = async (e) => {
     const isAvailable = e.target.value === "true";
     setIsUpdatingAvailability(true);
@@ -129,7 +128,7 @@ const MechanicProfile = () => {
     try {
       // Updated to match the route pattern
       const response = await axios.put(
-        `${API_ENDPOINT}/availability`,
+        `${API_ENDPOINT}/availability`,  
         { isAvailable },
         { withCredentials: true }
       );
@@ -160,53 +159,75 @@ const MechanicProfile = () => {
 
   return (
     <div className="min-h-screen bg-gray-100">
-      {/* Mobile Availability Toggle Button */}
-      <div className="lg:hidden bg-white border-b p-4">
-        <button
-          onClick={() => setShowAvailabilitySidebar(!showAvailabilitySidebar)}
-          className="w-full flex items-center justify-between bg-blue-50 p-3 rounded-lg border"
-        >
-          <span className="font-medium">Availability Settings</span>
-          <span className={`transform transition-transform ${showAvailabilitySidebar ? 'rotate-180' : ''}`}>
-            ▼
-          </span>
-        </button>
-
-        {/* Mobile Availability Panel */}
-        {showAvailabilitySidebar && (
-          <div className="mt-4 p-4 bg-gray-50 rounded-lg">
-            <h3 className="text-lg font-semibold text-gray-800 mb-3">Availability</h3>
-            <div className="space-y-3">
-              <label className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  name="availability"
-                  value="true"
-                  checked={mechanic.availability.isAvailable}
-                  onChange={handleAvailabilityChange}
-                  disabled={isUpdatingAvailability}
-                  className="text-blue-600"
-                />
-                <span>Available</span>
-              </label>
-              <label className="flex items-center space-x-2">
-                <input
-                  type="radio"
-                  name="availability"
-                  value="false"
-                  checked={!mechanic.availability.isAvailable}
-                  onChange={handleAvailabilityChange}
-                  disabled={isUpdatingAvailability}
-                  className="text-red-600"
-                />
-                <span>Not Available</span>
-              </label>
-              {isUpdatingAvailability && (
-                <div className="text-sm text-blue-600">Updating...</div>
-              )}
+      {/* Mobile Availability Section */}
+      <div className="lg:hidden bg-white border-b">
+        <div className="p-4">
+          <div className="bg-blue-50 p-4 rounded-lg border">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="font-semibold text-gray-800">Current Status</h3>
+              <div className={`px-3 py-1 rounded-full text-xs font-medium ${
+                mechanic.availability.isAvailable 
+                  ? 'bg-green-100 text-green-800' 
+                  : 'bg-red-100 text-red-800'
+              }`}>
+                {mechanic.availability.isAvailable ? 'Available' : 'Not Available'}
+              </div>
             </div>
+            
+            <button
+              onClick={() => setShowAvailabilitySidebar(!showAvailabilitySidebar)}
+              className="w-full flex items-center justify-center bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-lg text-sm font-medium"
+            >
+              <span>Change Availability</span>
+              <span className={`ml-2 transform transition-transform ${showAvailabilitySidebar ? 'rotate-180' : ''}`}>
+                ▼
+              </span>
+            </button>
+            
+            {/* Mobile Availability Panel */}
+            {showAvailabilitySidebar && (
+              <div className="mt-3 pt-3 border-t border-blue-200">
+                <div className="space-y-3">
+                  <label className="flex items-center space-x-3 p-2 rounded hover:bg-blue-100 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="availability-mobile"
+                      value="true"
+                      checked={mechanic.availability.isAvailable}
+                      onChange={handleAvailabilityChange}
+                      disabled={isUpdatingAvailability}
+                      className="text-blue-600 w-4 h-4"
+                    />
+                    <span className="font-medium text-green-700">Available</span>
+                  </label>
+                  <label className="flex items-center space-x-3 p-2 rounded hover:bg-blue-100 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="availability-mobile"
+                      value="false"
+                      checked={!mechanic.availability.isAvailable}
+                      onChange={handleAvailabilityChange}
+                      disabled={isUpdatingAvailability}
+                      className="text-red-600 w-4 h-4"
+                    />
+                    <span className="font-medium text-red-700">Not Available</span>
+                  </label>
+                  {isUpdatingAvailability && (
+                    <div className="text-sm text-blue-600 text-center py-2">
+                      <span className="inline-flex items-center">
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Updating...
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
 
       <div className="flex flex-col lg:flex-row">
@@ -277,7 +298,7 @@ const MechanicProfile = () => {
                 <InputField label="Address" name="address" value={mechanic.address} onChange={handleInputChange} />
                 <InputField label="Specializations (comma separated)" name="specializations" value={mechanic.specializations.join(", ")} onChange={handleSpecializationsChange} />
                 <InputField label="Service Types (comma separated)" name="serviceTypes" value={mechanic.serviceTypes.join(", ")} onChange={handleServiceTypesChange} />
-
+                
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <InputField label="Working Hours Start" name="start" value={mechanic.availability.workingHours.start} onChange={(e) => {
                     setMechanic(prev => ({

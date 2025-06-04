@@ -1,5 +1,6 @@
 const express = require("express");
 const router = express.Router();
+
 const mechanicCtrl = require("../controllers/mechanicController");
 const { verifyMechanicToken } = require("../Middleware/authMiddleware");
 
@@ -13,6 +14,7 @@ router.get("/profile", verifyMechanicToken, mechanicCtrl.getMechanicProfile);
 router.put(
   "/updateprofile",
   verifyMechanicToken,
+
   mechanicCtrl.updateMechanicProfile
 );
 router.put(

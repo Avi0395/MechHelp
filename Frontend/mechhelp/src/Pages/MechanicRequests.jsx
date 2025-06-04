@@ -1,6 +1,4 @@
 import React, { useEffect, useState } from "react";
-import axios from "axios";
-import { motion, AnimatePresence } from "framer-motion";
 import MechanicSideMap from "../components/MechanicSideMap"; // Map component
 const API_ENDPOINT = import.meta.env.VITE_REQUEST_API_END_POINT;
 
@@ -9,17 +7,24 @@ function MechanicRequests() {
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
   const [selectedRequest, setSelectedRequest] = useState(null);
+  const [isServiceCompleted, setIsServiceCompleted] = useState(false);
 
   const fetchRequests = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(`${API_ENDPOINT}/mechanic`, {
-        withCredentials: true,
+      const response = await fetch(`${API_ENDPOINT}/mechanic`, {
+        credentials: 'include',
       });
-      console.log("Fetched requests:", response.data);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      const data = await response.json();
+      console.log("Fetched requests:", data);
 
-      if (Array.isArray(response.data)) {
-        const activeRequests = response.data.filter(
+      if (Array.isArray(data)) {
+        const activeRequests = data.filter(
           (req) => req.status === "pending" || req.status === "accepted"
         );
         setRequests(activeRequests);
@@ -27,7 +32,7 @@ function MechanicRequests() {
         setError("Unexpected response format");
       }
     } catch (err) {
-      setError(err.response?.data?.message || err.message);
+      setError(err.message);
     } finally {
       setLoading(false);
     }
@@ -50,6 +55,8 @@ function MechanicRequests() {
         return "text-yellow-600 bg-yellow-100";
       case "accepted":
         return "text-blue-600 bg-blue-100";
+      case "completed":
+        return "text-green-600 bg-green-100";
       default:
         return "text-gray-600 bg-gray-100";
     }
@@ -57,21 +64,54 @@ function MechanicRequests() {
 
   const handleStatusChange = async (requestId, status) => {
     try {
-      await axios.patch(
-        `${API_ENDPOINT}/m/status`,
-        { requestId, status },
-        { withCredentials: true }
+      const response = await fetch(`${API_ENDPOINT}/m/status`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include',
+        body: JSON.stringify({ requestId, status }),
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      // Update local state immediately for better UX
+      setRequests(prevRequests => 
+        prevRequests.map(req => 
+          req._id === requestId ? { ...req, status } : req
+        ).filter(req => req.status !== "completed") // Remove completed requests from active list
       );
+      
+      // Don't immediately close modal when service is completed - let it show completion message first
+      if (selectedRequest && selectedRequest._id === requestId && status === "completed") {
+        setIsServiceCompleted(true);
+        // Auto-close modal after 3 seconds to show completion message
+        setTimeout(() => {
+          setSelectedRequest(null);
+          setIsServiceCompleted(false);
+        }, 3000);
+      }
+      
+      // Fetch updated data from server
       fetchRequests();
     } catch (err) {
       console.error("Error updating status:", err);
-      setError(err.response?.data?.message || err.message);
+      setError(err.message);
     }
+  };
+
+  const handleServiceCompleted = async (requestId) => {
+    console.log("Service automatically completed for request:", requestId);
+    setIsServiceCompleted(true); // Set completion state immediately for UI
+    await handleStatusChange(requestId, "completed");
   };
 
   const handleContainerClick = (request) => {
     if (request.status === "accepted") {
       setSelectedRequest(request);
+      setIsServiceCompleted(false); // Reset completion state when opening modal
     }
   };
 
@@ -88,14 +128,9 @@ function MechanicRequests() {
       ) : requests.length > 0 ? (
         <div className="space-y-4">
           {requests.map((request) => (
-            <motion.div
+            <div
               key={request._id}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              initial={{ opacity: 0, y: 30 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.3 }}
-              className="bg-white shadow-md rounded-xl p-5 border border-gray-200 cursor-pointer hover:shadow-lg transition-shadow"
+              className="bg-white shadow-md rounded-xl p-5 border border-gray-200 cursor-pointer hover:shadow-lg transition-all duration-200 transform hover:scale-102"
               onClick={() => handleContainerClick(request)}
             >
               <div className="flex justify-between items-center mb-2">
@@ -108,6 +143,9 @@ function MechanicRequests() {
                   )}`}
                 >
                   {request.status}
+                  {request.status === "accepted" && (
+                    <span className="ml-1">📍</span>
+                  )}
                 </span>
               </div>
               <div className="text-gray-700 text-sm mb-2">
@@ -139,7 +177,7 @@ function MechanicRequests() {
                       e.stopPropagation();
                       handleStatusChange(request._id, "accepted");
                     }}
-                    className="bg-green-600 text-white px-4 py-1 rounded-md hover:bg-green-700"
+                    className="bg-green-600 text-white px-4 py-1 rounded-md hover:bg-green-700 transition-colors"
                   >
                     Accept
                   </button>
@@ -148,7 +186,7 @@ function MechanicRequests() {
                       e.stopPropagation();
                       handleStatusChange(request._id, "rejected");
                     }}
-                    className="bg-red-600 text-white px-4 py-1 rounded-md hover:bg-red-700"
+                    className="bg-red-600 text-white px-4 py-1 rounded-md hover:bg-red-700 transition-colors"
                   >
                     Reject
                   </button>
@@ -156,19 +194,22 @@ function MechanicRequests() {
               )}
 
               {request.status === "accepted" && (
-                <div className="flex gap-2">
+                <div className="flex gap-2 items-center">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
                       handleStatusChange(request._id, "completed");
                     }}
-                    className="bg-green-600 text-white px-4 py-1 rounded-md hover:bg-green-700"
+                    className="bg-green-600 text-white px-4 py-1 rounded-md hover:bg-green-700 transition-colors"
                   >
                     Mark as Completed
                   </button>
+                  <span className="text-xs text-blue-600 font-medium">
+                    📍 Click to view live tracking
+                  </span>
                 </div>
               )}
-            </motion.div>
+            </div>
           ))}
         </div>
       ) : (
@@ -177,46 +218,81 @@ function MechanicRequests() {
         </p>
       )}
 
-      {/* MAP MODAL */}
-      <AnimatePresence>
-        {selectedRequest && (
-          <motion.div
-            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setSelectedRequest(null)}
+      {/* MAP MODAL - Using simple CSS animations instead of Framer Motion */}
+      {selectedRequest && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in"
+          onClick={() => {
+            if (!isServiceCompleted) {
+              setSelectedRequest(null);
+              setIsServiceCompleted(false);
+            }
+          }}
+        >
+          <div
+            className="bg-white rounded-lg p-4 w-[90%] md:w-[60%] h-[80%] relative animate-scale-in"
+            onClick={(e) => e.stopPropagation()}
           >
-            <motion.div
-              className="bg-white rounded-lg p-4 w-[90%] md:w-[60%] h-[80%] relative"
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.8 }}
-              onClick={(e) => e.stopPropagation()}
+            <h3 className="text-xl font-semibold mb-4 text-center">
+              Live Location Tracking 🗺️
+            </h3>
+
+            <div className="w-full h-full overflow-hidden rounded-lg">
+              <MechanicSideMap
+                userLocation={selectedRequest?.userLocation?.coordinates}
+                mechanicLocation={selectedRequest?.mechanicLocation?.coordinates}
+                onServiceCompleted={handleServiceCompleted}
+                requestId={selectedRequest?._id}
+              />
+            </div>
+
+            <button
+              onClick={() => {
+                setSelectedRequest(null);
+                setIsServiceCompleted(false);
+              }}
+              className="absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition-colors z-10"
             >
-              <h3 className="text-xl font-semibold mb-4 text-center">
-                Live Location Tracking 🗺️
-              </h3>
+              Close
+            </button>
+            
+            <div className="absolute top-2 left-2 bg-blue-500 text-white px-3 py-1 rounded-md text-sm z-10">
+              {isServiceCompleted ? "Service Completed! Auto-closing..." : "Auto-complete at 50m range"}
+            </div>
+          </div>
+        </div>
+      )}
 
-              <div className="w-full h-full overflow-hidden rounded-lg">
-                <MechanicSideMap
-                  userLocation={selectedRequest?.userLocation?.coordinates}
-                  mechanicLocation={
-                    selectedRequest?.mechanicLocation?.coordinates
-                  }
-                />
-              </div>
+      {/* CSS for animations */}
+      <style jsx>{`
+        @keyframes fadeIn {
+          from {
+            opacity: 0;
+          }
+          to {
+            opacity: 1;
+          }
+        }
 
-              <button
-                onClick={() => setSelectedRequest(null)}
-                className="absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600"
-              >
-                Close
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+        @keyframes scaleIn {
+          from {
+            transform: scale(0.8);
+            opacity: 0;
+          }
+          to {
+            transform: scale(1);
+            opacity: 1;
+          }
+        }
+
+        .animate-fade-in {
+          animation: fadeIn 0.2s ease-out;
+        }
+
+        .animate-scale-in {
+          animation: scaleIn 0.2s ease-out;
+        }
+      `}</style>
     </div>
   );
 }

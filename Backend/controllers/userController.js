@@ -58,11 +58,12 @@ exports.loginUser = async (req, res) => {
       expiresIn: "7d",
     });
 
-    res.cookie("UserToken", token, {
-      httpOnly: true,
-      secure: false, // Use true if you're using HTTPS in production
-      sameSite: "Lax",
-    });
+   res.cookie("UserToken", token, {
+  httpOnly: true,
+  secure: true,  // true for HTTPS
+  sameSite: "None",  // to allow cross-site cookies if needed
+  maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+});
     res.status(200).json({ message: "User Login successful", user, token });
   } catch (error) {
     console.error("Error in loginUser:", error);

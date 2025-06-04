@@ -95,6 +95,8 @@ exports.loginMechanic = async (req, res) => {
 
     res.cookie("MechToken", token, {
       httpOnly: true,
+      secure: true, //  for HTTPS
+      sameSite: "None", //  allow cross-origin cookie (Vercel)
       maxAge: 7 * 24 * 60 * 60 * 1000,
     });
 

@@ -20,7 +20,6 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(cookieParser());
-
 const corsOptions = {
   origin: "https://mechhelp.vercel.app",
   credentials: true,

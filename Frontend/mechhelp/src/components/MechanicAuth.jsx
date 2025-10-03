@@ -80,7 +80,6 @@ const MechanicAuth = () => {
       const response = await axios.post(`${API_ENDPOINT}/register`, payload, {
         withCredentials: true, 
       });
-      const res = await axios.post(url, payload, { withCredentials: true });
 
       const data = response.data;
 

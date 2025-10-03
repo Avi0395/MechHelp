@@ -1,23 +1,47 @@
 import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Sparkles } from "lucide-react";
+import axios from "axios";
+import { toast } from "react-toastify";
+import 'react-toastify/dist/ReactToastify.css';
+
+const API_ENDPOINT = import.meta.env.VITE_MECHANIC_API_END_POINT;
 
 const MechDashboard = () => {
   const [mechanic, setMechanic] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const stored = localStorage.getItem("mechanicInfo");
-
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      setMechanic(parsed);
-    }
+    fetchMechanicProfile();
   }, []);
+
+  const fetchMechanicProfile = async () => {
+    setIsLoading(true);
+    try {
+      const response = await axios.get(`${API_ENDPOINT}/profile`, {
+        withCredentials: true,
+      });
+      setMechanic(response.data);
+    } catch (error) {
+      console.error("Error fetching mechanic profile:", error);
+      toast.error("Failed to fetch profile.");
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100">
+        <p className="text-2xl font-semibold text-gray-600">Loading...</p>
+      </div>
+    );
+  }
 
   if (!mechanic) {
     return (
       <div className="h-screen flex items-center justify-center bg-gradient-to-br from-indigo-100 via-purple-50 to-pink-100">
-        <p className="text-2xl font-semibold text-gray-600">Loading...</p>
+        <p className="text-2xl font-semibold text-gray-600">Unable to load profile</p>
       </div>
     );
   }
@@ -57,10 +81,10 @@ const MechDashboard = () => {
             className="bg-indigo-100 rounded-xl p-6 shadow-md text-center"
           >
             <h2 className="text-2xl font-semibold text-indigo-700 mb-2">
-              ✨ "Excellence is not a skill, it’s an attitude."
+              ✨ "Excellence is not a skill, it's an attitude."
             </h2>
             <p className="text-gray-700">
-              You’re not just fixing vehicles — you’re building trust, one ride at a time.
+              You're not just fixing vehicles — you're building trust, one ride at a time.
             </p>
           </motion.div>
 
@@ -75,7 +99,7 @@ const MechDashboard = () => {
               🔧 Keep the tools ready
             </h2>
             <p className="text-gray-700">
-              Precision, patience, and power — you’ve got everything it takes.
+              Precision, patience, and power — you've got everything it takes.
             </p>
           </motion.div>
 

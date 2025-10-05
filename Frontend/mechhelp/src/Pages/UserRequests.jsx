@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
-import MechanicSideMap from "../components/MechanicSideMap";
 import UserSideMap from "../components/UserSideMap"; // Reuse the MechanicSideMap component
 const API_ENDPOINT = import.meta.env.VITE_REQUEST_API_END_POINT;
 

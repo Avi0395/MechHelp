@@ -1,4 +1,3 @@
-// controllers/requestController.js
 const Request = require("../models/Request");
 const Mechanic = require("../models/Mechanic");
 const User = require("../models/User");
@@ -59,8 +58,8 @@ exports.getRequestsByMechanic = async (req, res) => {
 
 exports.updateRequestStatusUser = async (req, res) => {
   try {
-    const userId = req.user.id; // mechanic's ID from the JWT/cookie
-    const { requestId, status } = req.body; // Getting requestId from the body
+    const userId = req.user.id; 
+    const { requestId, status } = req.body; 
 
     const validStatuses = [
       "pending",
@@ -73,11 +72,9 @@ exports.updateRequestStatusUser = async (req, res) => {
       return res.status(400).json({ message: "Invalid status value" });
     }
 
-    // Find the request
     const request = await Request.findById(requestId);
     if (!request) return res.status(404).json({ message: "Request not found" });
 
-    // Check mechanic identity
     if (request.userId.toString() !== userId) {
       return res
         .status(403)
@@ -97,8 +94,8 @@ exports.updateRequestStatusUser = async (req, res) => {
 
 exports.updateRequestStatusMechanic = async (req, res) => {
   try {
-    const mechanicId = req.mechanic.id; // mechanic's ID from the JWT/cookie
-    const { requestId, status } = req.body; // Getting requestId from the body
+    const mechanicId = req.mechanic.id; 
+    const { requestId, status } = req.body; 
 
     const validStatuses = [
       "pending",

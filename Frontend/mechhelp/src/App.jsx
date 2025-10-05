@@ -1,7 +1,6 @@
 import "./App.css";
 import Home from "./Pages/Home";
 import Layout from "./components/Layout";
-import Services from "./Pages/Services";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import SignUp from "./components/SignUp";
 import NearbyMechanic from "./Pages/NearbyMechanic";
@@ -27,10 +26,6 @@ function App() {
         {
           index: true,
           element: <Home />,
-        },
-        {
-          path: "services",
-          element: <Services />,
         },
         {
           path: "nearby-mechanic",

@@ -54,7 +54,8 @@ exports.loginUser = async (req, res) => {
     }
 
     // Generate JWT token
-    const token = jwt.sign({ id: user._id }, JWT_SECRET, {
+    const jwtSecret = process.env.JWT_SECRET || "fallback_jwt_secret_key";
+    const token = jwt.sign({ id: user._id }, jwtSecret, {
       expiresIn: "7d",
     });
 
@@ -99,15 +100,16 @@ exports.getUserProfile = async (req, res) => {
 exports.updateUserProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { name, phoneNumber } = req.body;
+    const { name, phoneNumber, avatar } = req.body;
 
     const user = await User.findById(userId);
     if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
 
-    user.name = name || user.name;
-    user.phoneNumber = phoneNumber || user.phoneNumber;
+    if (name) user.name = name;
+    if (phoneNumber) user.phoneNumber = phoneNumber;
+    if (avatar) user.avatar = avatar;
 
     await user.save();
     res.status(200).json({ message: "Profile updated successfully", user });

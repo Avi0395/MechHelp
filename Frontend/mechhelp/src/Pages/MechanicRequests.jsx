@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from "react";
-import MechanicSideMap from "../components/MechanicSideMap"; // Map component
+import MechanicSideMap from "../components/MechanicSideMap";
+import socket from "../services/socketService";
+
 const API_ENDPOINT = import.meta.env.VITE_REQUEST_API_END_POINT;
 
 function MechanicRequests() {
@@ -40,6 +42,18 @@ function MechanicRequests() {
 
   useEffect(() => {
     fetchRequests();
+
+    const handleRefresh = () => {
+      fetchRequests();
+    };
+
+    socket.on("new_request_received", handleRefresh);
+    socket.on("request_status_updated", handleRefresh);
+
+    return () => {
+      socket.off("new_request_received", handleRefresh);
+      socket.off("request_status_updated", handleRefresh);
+    };
   }, []);
 
   const formatLocation = (location) => {
@@ -135,7 +149,7 @@ function MechanicRequests() {
             >
               <div className="flex justify-between items-center mb-2">
                 <span className="font-semibold text-lg">
-                  User: {request.userId?.name || "Unknown"}
+                  User: {request.userId?.name || request.userId?.fullName || request.userId?.email || request.userId?.phoneNumber || "Customer"}
                 </span>
                 <span
                   className={`text-sm px-3 py-1 rounded-full font-medium ${getStatusColor(
@@ -218,10 +232,10 @@ function MechanicRequests() {
         </p>
       )}
 
-      {/* MAP MODAL - Using simple CSS animations instead of Framer Motion */}
+      {/* MAP MODAL */}
       {selectedRequest && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 animate-fade-in"
+          className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-fade-in"
           onClick={() => {
             if (!isServiceCompleted) {
               setSelectedRequest(null);
@@ -230,35 +244,27 @@ function MechanicRequests() {
           }}
         >
           <div
-            className="bg-white rounded-lg p-4 w-[90%] md:w-[60%] h-[80%] relative animate-scale-in"
+            className="w-full max-w-5xl h-[88vh] flex flex-col relative rounded-2xl shadow-2xl overflow-hidden bg-white animate-scale-in"
             onClick={(e) => e.stopPropagation()}
           >
-            <h3 className="text-xl font-semibold mb-4 text-center">
-              Live Location Tracking 🗺️
-            </h3>
-
-            <div className="w-full h-full overflow-hidden rounded-lg">
-              <MechanicSideMap
-                userLocation={selectedRequest?.userLocation?.coordinates}
-                mechanicLocation={selectedRequest?.mechanicLocation?.coordinates}
-                onServiceCompleted={handleServiceCompleted}
-                requestId={selectedRequest?._id}
-              />
-            </div>
+            <MechanicSideMap
+              userLocation={selectedRequest?.userLocation?.coordinates}
+              mechanicLocation={selectedRequest?.mechanicLocation?.coordinates}
+              onServiceCompleted={handleServiceCompleted}
+              requestId={selectedRequest?._id}
+              mechanicId={selectedRequest?.mechanicId?._id || selectedRequest?.mechanicId}
+              initialStatus={selectedRequest?.status}
+            />
 
             <button
               onClick={() => {
                 setSelectedRequest(null);
                 setIsServiceCompleted(false);
               }}
-              className="absolute top-2 right-2 bg-red-500 text-white px-3 py-1 rounded-md hover:bg-red-600 transition-colors z-10"
+              className="absolute top-3 right-3 bg-red-600 hover:bg-red-700 text-white px-3.5 py-1.5 rounded-full font-bold text-xs shadow-lg transition-all z-[1001]"
             >
-              Close
+              ✕ Close Map
             </button>
-            
-            <div className="absolute top-2 left-2 bg-blue-500 text-white px-3 py-1 rounded-md text-sm z-10">
-              {isServiceCompleted ? "Service Completed! Auto-closing..." : "Auto-complete at 50m range"}
-            </div>
           </div>
         </div>
       )}

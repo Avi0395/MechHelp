@@ -1,10 +1,26 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import toast, { Toaster } from "react-hot-toast";
+import socket from "../services/socketService";
 
 const API_ENDPOINT = import.meta.env.VITE_MECHANIC_API_END_POINT;
 const REQUEST_API_ENDPOINT = import.meta.env.VITE_REQUEST_API_END_POINT;
 const GEOCODE_API_KEY = import.meta.env.VITE_GEOCODE_API_KEY;
+
+const normalizeLatLng = (loc) => {
+    if (!loc || !Array.isArray(loc) || loc.length < 2) return null;
+    const a = Number(loc[0]);
+    const b = Number(loc[1]);
+    if (isNaN(a) || isNaN(b) || (a === 0 && b === 0)) return null;
+
+    if (Math.abs(a) > 50 && Math.abs(b) < 45) {
+        return [b, a]; // Return [lat, lng]
+    }
+    if (Math.abs(a) > 90 && Math.abs(b) <= 90) {
+        return [b, a];
+    }
+    return [a, b];
+};
 
 const calculateDistance = (lat1, lng1, lat2, lng2) => {
     const R = 6371;
@@ -92,28 +108,26 @@ export default function NearbyMechanic() {
         try {
             const res = await axios.get(`${API_ENDPOINT}/nearby`, {
                 params: {
-                    latitude: userLocation.lng,
-                    longitude: userLocation.lat,
+                    latitude: userLocation.lat,
+                    longitude: userLocation.lng,
                     radius: radius,
                 },
             });
 
-            // console.log('API Response:', res.data);
-            // console.log("Mechanics:", res.data.mechanics);
             const responseMechanics = res.data.mechanics;
 
             if (responseMechanics && responseMechanics.length > 0) {
                 const sortedMechanics = responseMechanics
                     .map((mech) => {
-                        if (mech.location && mech.location.coordinates && mech.location.coordinates.length >= 2) {
-                            const [lat, lng] = mech.location.coordinates;
+                        const norm = normalizeLatLng(mech.location?.coordinates);
+                        if (norm) {
+                            const [lat, lng] = norm;
                             const distance = calculateDistance(userLocation.lat, userLocation.lng, lat, lng);
-                            // console.log(`Distance to ${mech.name}: ${distance} km`);
                             return { ...mech, distance };
                         }
                         return null;
                     })
-                    .filter(Boolean) // remove null entries
+                    .filter(Boolean)
                     .sort((a, b) => a.distance - b.distance);
 
                 setMechanics(sortedMechanics);
@@ -135,9 +149,12 @@ export default function NearbyMechanic() {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        // console.log(selectedMechanic)
         const finalProblem = selectedProblem === "Other" ? customProblem : selectedProblem;
         try {
+            // Mongo GeoJSON standard expects [longitude, latitude]
+            const userCoords = [userLocation.lng, userLocation.lat];
+            const mechCoords = selectedMechanic.location?.coordinates || [userLocation.lng + 0.15, userLocation.lat + 0.15];
+
             const response = await axios.post(
                 `${REQUEST_API_ENDPOINT}/`,
                 {
@@ -145,23 +162,31 @@ export default function NearbyMechanic() {
                     message: finalProblem,                  
                     userLocation: {
                         type: "Point",
-                        coordinates: [userLocation.lat, userLocation.lng],
+                        coordinates: userCoords,
                         address: userLocation.address        
                     },
                     mechanicLocation: {
                         type: "Point",
-                        coordinates: selectedMechanic.location.coordinates,
+                        coordinates: mechCoords,
                         address: selectedMechanic.address   
                     }
                 },
                 {
-                    withCredentials: true  // ✅ important if using cookies for auth
+                    withCredentials: true
                 }
             );
 
             toast.success(`Request sent to ${selectedMechanic.name} for: ${finalProblem}`);
             setShowForm(false);
             setRequestSent(true);
+            
+            // Real-time socket emit for immediate frontend sync
+            try {
+              socket.emit("new_request_created", response.data.request);
+            } catch (sErr) {
+              console.log("Socket emit note:", sErr);
+            }
+
             setTimeout(() => setRequestSent(false), 4000);
         } catch (error) {
             console.error("Error creating request:", error);

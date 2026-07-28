@@ -26,6 +26,10 @@ const userSchema = new mongoose.Schema(
       required: true,
       match: [/^\d{10,15}$/, "Please enter a valid phone number"],
     },
+    avatar: {
+      type: String,
+      default: "https://api.dicebear.com/7.x/bottts/svg?seed=MasterTech&backgroundColor=b6e3f4",
+    },
   },
   {
     timestamps: true,

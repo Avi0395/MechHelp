@@ -10,7 +10,7 @@ exports.createRequest = async (req, res) => {
     const { mechanicId, userLocation, mechanicLocation, message } = req.body;
    
     const newRequest = new Request({
-      userId:Id,
+      userId: Id,
       mechanicId,
       userLocation,
       mechanicLocation,
@@ -18,6 +18,15 @@ exports.createRequest = async (req, res) => {
     });
 
     await newRequest.save();
+
+    // Broadcast socket event for real-time update
+    const io = req.io || req.app.get("io");
+    if (io) {
+      console.log(`📡 Emitting socket events for new request: ${newRequest._id}`);
+      io.emit("new_request_received", newRequest);
+      io.emit("request_status_updated", { requestId: newRequest._id, status: "pending" });
+    }
+
     res
       .status(201)
       .json({ message: "Request sent successfully", request: newRequest });
@@ -28,11 +37,14 @@ exports.createRequest = async (req, res) => {
   }
 };
 
-// // Get all requests for a user
+// Get all requests for a user
 exports.getRequestsByUser = async (req, res) => {
   try {
-    const  userId  = req.user.id;
-    const requests = await Request.find({ userId }).populate("mechanicId");
+    const userId = req.user.id;
+    const requests = await Request.find({ userId })
+      .populate("mechanicId")
+      .populate("userId", "name email phoneNumber")
+      .sort({ createdAt: -1 });
     res.status(200).json(requests);
   } catch (error) {
     res
@@ -45,7 +57,10 @@ exports.getRequestsByUser = async (req, res) => {
 exports.getRequestsByMechanic = async (req, res) => {
   try {
     const mechanicId = req.mechanic.id;
-    const requests = await Request.find({ mechanicId }).populate("userId");
+    const requests = await Request.find({ mechanicId })
+      .populate("userId", "name email phoneNumber")
+      .populate("mechanicId")
+      .sort({ createdAt: -1 });
     res.status(200).json(requests);
   } catch (error) {
     res
@@ -59,8 +74,8 @@ exports.getRequestsByMechanic = async (req, res) => {
 
 exports.updateRequestStatusUser = async (req, res) => {
   try {
-    const userId = req.user.id; // mechanic's ID from the JWT/cookie
-    const { requestId, status } = req.body; // Getting requestId from the body
+    const userId = req.user.id;
+    const { requestId, status } = req.body;
 
     const validStatuses = [
       "pending",
@@ -73,11 +88,9 @@ exports.updateRequestStatusUser = async (req, res) => {
       return res.status(400).json({ message: "Invalid status value" });
     }
 
-    // Find the request
     const request = await Request.findById(requestId);
     if (!request) return res.status(404).json({ message: "Request not found" });
 
-    // Check mechanic identity
     if (request.userId.toString() !== userId) {
       return res
         .status(403)
@@ -86,6 +99,14 @@ exports.updateRequestStatusUser = async (req, res) => {
 
     request.status = status;
     await request.save();
+
+    // Broadcast real-time status update
+    const io = req.io || req.app.get("io");
+    if (io) {
+      console.log(`📡 Emitting user status update for request ${requestId}: ${status}`);
+      io.emit("request_status_updated", { requestId, status });
+      io.to(`request_${requestId}`).emit("request_status_updated", { requestId, status });
+    }
 
     res.status(200).json({ message: "Status updated successfully", request });
   } catch (error) {
@@ -97,8 +118,8 @@ exports.updateRequestStatusUser = async (req, res) => {
 
 exports.updateRequestStatusMechanic = async (req, res) => {
   try {
-    const mechanicId = req.mechanic.id; // mechanic's ID from the JWT/cookie
-    const { requestId, status } = req.body; // Getting requestId from the body
+    const mechanicId = req.mechanic.id;
+    const { requestId, status } = req.body;
 
     const validStatuses = [
       "pending",
@@ -111,11 +132,9 @@ exports.updateRequestStatusMechanic = async (req, res) => {
       return res.status(400).json({ message: "Invalid status value" });
     }
 
-    // Find the request
     const request = await Request.findById(requestId);
     if (!request) return res.status(404).json({ message: "Request not found" });
 
-    // Check mechanic identity
     if (request.mechanicId.toString() !== mechanicId) {
       return res
         .status(403)
@@ -125,6 +144,14 @@ exports.updateRequestStatusMechanic = async (req, res) => {
     request.status = status;
     await request.save();
 
+    // Broadcast real-time status update
+    const io = req.io || req.app.get("io");
+    if (io) {
+      console.log(`📡 Emitting mechanic status update for request ${requestId}: ${status}`);
+      io.emit("request_status_updated", { requestId, status });
+      io.to(`request_${requestId}`).emit("request_status_updated", { requestId, status });
+    }
+
     res.status(200).json({ message: "Status updated successfully", request });
   } catch (error) {
     res
@@ -132,8 +159,8 @@ exports.updateRequestStatusMechanic = async (req, res) => {
       .json({ message: "Error updating status", error: error.message });
   }
 };
-// Delete request
 
+// Delete request
 exports.deleteRequest = async (req, res) => {
   try {
     const { id } = req.params;
@@ -143,7 +170,6 @@ exports.deleteRequest = async (req, res) => {
       return res.status(404).json({ message: "Request not found" });
     }
 
-    // Check if the logged-in user or mechanic is authorized to delete
     if (
       req.user &&
       request.userId.toString() !== req.user.id &&
@@ -152,10 +178,16 @@ exports.deleteRequest = async (req, res) => {
     ) {
       return res
         .status(403)
-        .json({ message: "You are not authorized to delete this request" });
+        .json({ message: "Not authorized to delete this request" });
     }
 
     await Request.findByIdAndDelete(id);
+
+    const io = req.io || req.app.get("io");
+    if (io) {
+      io.emit("request_status_updated", { requestId: id, status: "deleted" });
+    }
+
     res.status(200).json({ message: "Request deleted successfully" });
   } catch (error) {
     res

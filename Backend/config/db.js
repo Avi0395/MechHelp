@@ -1,15 +1,10 @@
 const mongoose = require("mongoose");
-const dotenv = require("dotenv")
-require("dotenv").config();
-
-dotenv.config({
-    path: "./config/.env"
-});
 
 const connectDB = async () => {
     try {
-        await mongoose.connect(process.env.MONGO_URI);
-        console.log("MongoDB Connected");
+        const connUri = process.env.MONGO_URI || "mongodb://127.0.0.1:27017/mechhelp";
+        await mongoose.connect(connUri);
+        console.log("MongoDB Connected:", connUri);
     } catch (error) {
         console.error("MongoDB Connection Error:", error.message);
         process.exit(1);

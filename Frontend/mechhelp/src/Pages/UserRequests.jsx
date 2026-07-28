@@ -2,14 +2,16 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { motion, AnimatePresence } from "framer-motion";
 import MechanicSideMap from "../components/MechanicSideMap";
-import UserSideMap from "../components/UserSideMap"; // Reuse the MechanicSideMap component
+import UserSideMap from "../components/UserSideMap";
+import socket from "../services/socketService";
+
 const API_ENDPOINT = import.meta.env.VITE_REQUEST_API_END_POINT;
 
 function UserRequests() {
   const [requests, setRequests] = useState([]);
   const [error, setError] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [selectedRequest, setSelectedRequest] = useState(null); // Store selected request for map
+  const [selectedRequest, setSelectedRequest] = useState(null);
 
   const fetchRequests = async () => {
     try {
@@ -35,6 +37,18 @@ function UserRequests() {
 
   useEffect(() => {
     fetchRequests();
+
+    const handleRefresh = () => {
+      fetchRequests();
+    };
+
+    socket.on("mechanic_location_updated", handleRefresh);
+    socket.on("request_status_updated", handleRefresh);
+
+    return () => {
+      socket.off("mechanic_location_updated", handleRefresh);
+      socket.off("request_status_updated", handleRefresh);
+    };
   }, []);
 
   const formatLocation = (location) => {
@@ -169,32 +183,35 @@ function UserRequests() {
       <AnimatePresence>
         {selectedRequest && (
           <motion.div
-            className="fixed top-0 left-0 z-50 w-full h-full bg-white bg-opacity-80"
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            onClick={() => setSelectedRequest(null)} // Close the map by setting selectedRequest to null
+            onClick={() => setSelectedRequest(null)}
           >
             <motion.div
-              className="absolute inset-0 flex justify-center items-center"
-              initial={{ scale: 0.8 }}
-              animate={{ scale: 1 }}
-              exit={{ scale: 0.8 }}
-              onClick={(e) => e.stopPropagation()} // Prevent closing the map if clicking inside
+              className="w-full max-w-5xl h-[88vh] flex flex-col relative rounded-2xl shadow-2xl overflow-hidden bg-white"
+              initial={{ scale: 0.9, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.9, opacity: 0 }}
+              onClick={(e) => e.stopPropagation()}
             >
               <UserSideMap
                 userLocation={selectedRequest?.userLocation?.coordinates}
                 mechanicLocation={
+                  selectedRequest?.mechanicLocation?.coordinates ||
                   selectedRequest?.mechanicId?.location?.coordinates
                 }
+                requestId={selectedRequest?._id}
               />
+
+              <button
+                onClick={() => setSelectedRequest(null)}
+                className="absolute top-3 right-3 bg-red-600 hover:bg-red-700 text-white px-3.5 py-1.5 rounded-full font-bold text-xs shadow-lg transition-all z-[1001]"
+              >
+                ✕ Close Map
+              </button>
             </motion.div>
-            <button
-              onClick={() => setSelectedRequest(null)}
-              className="absolute top-4 right-4 bg-red-600 text-white px-6 py-3 rounded-full hover:bg-red-700 transition-all duration-300"
-            >
-              Close Map
-            </button>
           </motion.div>
         )}
       </AnimatePresence>

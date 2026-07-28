@@ -78,6 +78,14 @@ const MechanicSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    avatar: {
+      type: String,
+      default: "https://api.dicebear.com/7.x/bottts/svg?seed=MasterTech&backgroundColor=b6e3f4",
+    },
+    profilePic: {
+      type: String,
+      default: "https://api.dicebear.com/7.x/bottts/svg?seed=MasterTech&backgroundColor=b6e3f4",
+    },
   },
   {
     timestamps: true,

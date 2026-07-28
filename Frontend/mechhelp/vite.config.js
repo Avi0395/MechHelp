@@ -4,7 +4,20 @@ import tailwindcss from '@tailwindcss/vite'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(),
+  plugins: [
+    react(),
     tailwindcss(),
   ],
+  build: {
+    chunkSizeWarningLimit: 1000,
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          leaflet: ['leaflet', 'react-leaflet'],
+          lucide: ['lucide-react', 'react-icons'],
+          framer: ['framer-motion'],
+        },
+      },
+    },
+  },
 })

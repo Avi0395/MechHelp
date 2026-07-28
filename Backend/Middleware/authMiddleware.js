@@ -2,6 +2,8 @@ const jwt = require("jsonwebtoken");
 const User = require("../models/User");
 const Mechanic = require("../models/Mechanic");
 
+const getJwtSecret = () => process.env.JWT_SECRET || "fallback_jwt_secret_key";
+
 // Middleware for verifying user token
 exports.verifyUserToken = async (req, res, next) => {
   const token = req.cookies.UserToken; // Get token from cookies
@@ -11,7 +13,7 @@ exports.verifyUserToken = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET); // Verify token
+    const decoded = jwt.verify(token, getJwtSecret()); // Verify token
     const user = await User.findById(decoded.id);
     if (!user) {
       return res.status(401).json({ message: "Invalid user" }); // Invalid user message
@@ -24,7 +26,6 @@ exports.verifyUserToken = async (req, res, next) => {
   }
 };
 
-
 // Middleware for verifying mechanic token
 exports.verifyMechanicToken = async (req, res, next) => {
   const token = req.cookies.MechToken; // Get token from cookies
@@ -33,7 +34,7 @@ exports.verifyMechanicToken = async (req, res, next) => {
     return res.status(401).json({ message: "Mechanic token missing" });
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
     const mechanic = await Mechanic.findById(decoded.id);
     if (!mechanic) return res.status(401).json({ message: "Invalid mechanic" });
 
@@ -53,7 +54,7 @@ exports.authenticateUser = async (req, res, next) => {
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
     const user = await User.findById(decoded.id);
 
     if (!user) {
@@ -69,7 +70,6 @@ exports.authenticateUser = async (req, res, next) => {
   }
 };
 
-
 exports.authenticateMechanic = async (req, res, next) => {
   try {
     const token = req.cookies.MechToken;
@@ -77,7 +77,7 @@ exports.authenticateMechanic = async (req, res, next) => {
       return res.status(401).json({ message: "No token provided" });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, getJwtSecret());
     const mechanic = await Mechanic.findById(decoded.id);
 
     if (!mechanic) {
@@ -90,5 +90,3 @@ exports.authenticateMechanic = async (req, res, next) => {
     return res.status(401).json({ message: "Authentication failed", error: err.message });
   }
 };
-
-

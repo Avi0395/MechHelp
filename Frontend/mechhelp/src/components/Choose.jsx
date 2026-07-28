@@ -1,49 +1,66 @@
 import React from "react";
 import car from "../assets/car2.png";
+import { ShieldCheck, Clock, Award, Wrench } from "lucide-react";
 
 const Choose = () => {
+  const features = [
+    {
+      title: "Mobile Diagnostics",
+      text: "Doorstep computer diagnostic scan at your home or office with full report.",
+      icon: <Wrench className="w-6 h-6 text-blue-600" />
+    },
+    {
+      title: "Bodywork & Paint",
+      text: "Specialized car dent repair and precision factory color matching.",
+      icon: <Award className="w-6 h-6 text-blue-600" />
+    },
+    {
+      title: "Oil, Lube & Filters",
+      text: "Complete engine oil flush and filter change to extend vehicle lifespan.",
+      icon: <Clock className="w-6 h-6 text-blue-600" />
+    },
+    {
+      title: "Car Detailing",
+      text: "Professional interior steam cleaning, restoration, and ceramic polish.",
+      icon: <ShieldCheck className="w-6 h-6 text-blue-600" />
+    },
+  ];
+
   return (
-    <div className="min-h-screen flex flex-col ">
-      <div className="text-center">
-        <h1 className="text-black font-bold text-6xl">Why to choose us?</h1>
-        <p className="text-3xl mt-4">We offer full service and maintenance</p>
-        <div className="flex justify-center">
-          <img src={car} alt="Car" className="max-w-full h-auto mt-4" />
+    <section className="bg-slate-50 text-slate-900 py-20 px-6 border-b border-slate-200">
+      <div className="max-w-7xl mx-auto text-center space-y-12">
+        <div className="space-y-3">
+          <span className="text-xs font-extrabold uppercase tracking-widest text-blue-600">Why Choose Us</span>
+          <h2 className="text-3xl md:text-5xl font-extrabold text-slate-900">Full-Service Care On Demand</h2>
+          <p className="text-slate-600 text-base max-w-xl mx-auto">
+            Certified mechanics, transparent pricing, and real-time map tracking right at your doorstep.
+          </p>
         </div>
 
-        <div className="flex flex-col md:flex-row gap-4 justify-center items-center md:justify-evenly mt-8">
-          {[
-            {
-              
-              title: "Diagnostics",
-              text: "If your car needs a mobile diagnostic check done at your home or office, let MechHelp come to you.",
-            },
-            {
-              title: "Dent and Paint",
-              text: "MechHelp specializes in car dent repair and car painting services for a range of models.",
-            },
-            {
-              title: "Oil/Lube/Filters",
-              text: "MechHelp proudly serves the Lube, Oil & Filter change needs of customers' vehicle performance while extending the life of your vehicle.",
-            },
-            {
-              title: "Detailing",
-              text: "MechHelp offers professional car detail services at an affordable price. Our interior cleaning, detailing, and restoration services can help you recapture that new car look and smell.",
-            },
-          ].map((service, index) => (
+        <div className="flex justify-center">
+          <img src={car} alt="Car" className="max-h-72 object-contain filter drop-shadow-md" />
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
+          {features.map((service, index) => (
             <div
               key={index}
-              className="w-64 h-64  bg-black rounded-2xl font-medium text-white p-4 flex flex-col hover:scale-105 transition-transform duration-300 "
+              className="bg-white border border-slate-200 hover:border-blue-600 rounded-2xl p-6 transition-all duration-300 hover:-translate-y-1 space-y-4 shadow-xs hover:shadow-md"
             >
-              <h2 className="text-blue-500 font-bold text-2xl mt-2">
+              <div className="bg-blue-50 border border-blue-100 w-12 h-12 rounded-xl flex items-center justify-center">
+                {service.icon}
+              </div>
+              <h3 className="text-xl font-bold text-slate-900">
                 {service.title}
-              </h2>
-              <p className="mt-3 flex-grow">{service.text}</p>
+              </h3>
+              <p className="text-slate-600 text-sm leading-relaxed">
+                {service.text}
+              </p>
             </div>
           ))}
         </div>
       </div>
-    </div>
+    </section>
   );
 };
 

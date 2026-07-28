@@ -66,8 +66,10 @@ const RequestSchema = new mongoose.Schema(
   }
 );
 
-// Index for geospatial queries if needed later
+// Index for geospatial queries & status filtering
 RequestSchema.index({ userLocation: "2dsphere" });
 RequestSchema.index({ mechanicLocation: "2dsphere" });
+RequestSchema.index({ userId: 1, status: 1 });
+RequestSchema.index({ mechanicId: 1, status: 1 });
 
 module.exports = mongoose.model("Request", RequestSchema);

@@ -76,7 +76,7 @@ const calculateETA = (distance) => {
   return `${hours}h ${remainingMinutes}m`;
 };
 
-// Component to handle map sizing & framing both pins reliably
+// Component to handle map sizing & framing both pins reliably (Ultra-fast instant render)
 const MapController = ({ userLoc, mechLoc, recenterTrigger }) => {
   const map = useMap();
 
@@ -88,14 +88,17 @@ const MapController = ({ userLoc, mechLoc, recenterTrigger }) => {
       map.invalidateSize();
     };
 
+    // Instant immediate rendering on animation frame
     updateSize();
+    requestAnimationFrame(updateSize);
 
     const observer = new ResizeObserver(() => {
       updateSize();
     });
     observer.observe(container);
 
-    const delays = [50, 150, 300, 500, 800, 1200];
+    // Tight fast intervals (0ms, 20ms, 50ms, 100ms, 200ms, 350ms)
+    const delays = [0, 20, 50, 100, 200, 350];
     const timers = delays.map((delay) => setTimeout(updateSize, delay));
 
     window.addEventListener("resize", updateSize);
@@ -204,9 +207,15 @@ export default function UserSideMap({ userLocation: rawUserLoc, mechanicLocation
             style={{ height: "100%", width: "100%" }}
             zoomControl={true}
           >
+            {/* High-speed CartoDB CDN Tile Layer with instant pre-buffering */}
             <TileLayer 
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+              url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> &copy; <a href="https://carto.com/attributions">CARTO</a>'
+              subdomains="abcd"
+              maxZoom={19}
+              updateWhenIdle={false}
+              updateWhenZooming={false}
+              keepBuffer={6}
             />
 
             {userLocation && (
